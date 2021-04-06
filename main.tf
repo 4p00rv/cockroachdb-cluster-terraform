@@ -47,12 +47,13 @@ resource "aws_security_group_rule" "db_port" {
 }
 
 resource "aws_instance" "cockroachdb" {
-  ami                          = var.ami_id
+  ami = var.ami_id
   associate_public_ip_address  = true
-  instance_type                = "t2.micro"
-  key_name                     = var.ssh_key_name
-  subnet_id                    = module.vpc.subnet_id
-  security_groups              = [aws_security_group.default.id]
+  instance_type = "t2.micro"
+  key_name = var.ssh_key_name
+  subnet_id = module.vpc.subnet_id
+  vpc_security_group_ids = [ aws_security_group.default.id ]
+  user_data = templatefile("install.sh", {})
 
   volume_tags = { Name = "test" }
 
