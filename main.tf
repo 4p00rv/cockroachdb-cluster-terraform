@@ -7,6 +7,13 @@ resource "aws_security_group" "default" {
   description = "Allow dashboard and db port access"
   vpc_id      = module.vpc.id
 
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags = {
     Name = "test"
   }
