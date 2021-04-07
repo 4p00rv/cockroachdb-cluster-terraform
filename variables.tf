@@ -18,3 +18,13 @@ variable "ssh_key_name" {
   type = string
 }
 
+variable "cluster_size" {
+  description = "size of the cluster"
+  type = number
+}
+
+variable "node_crt_pwd" {
+  description = "Password for local key/crt generation"
+  type = string
+}
+

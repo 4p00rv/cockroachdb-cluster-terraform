@@ -47,6 +47,8 @@ resource "aws_security_group_rule" "db_port" {
 }
 
 resource "aws_instance" "cockroachdb" {
+  count = var.cluster_size
+
   ami = var.ami_id
   associate_public_ip_address  = true
   instance_type = "t2.micro"
@@ -56,6 +58,17 @@ resource "aws_instance" "cockroachdb" {
   user_data = templatefile("install.sh", {})
 
   volume_tags = { Name = "test" }
+
+  # Create cert and key for the node
+  provisioner "provision-cert-key" {
+    working_dir = path.module
+    command = "generate_cert.sh"
+    environment = {
+      INTERNAL_IP = aws_instance.cockroachdb[count.index].private_ip
+      EXTERNAL_IP = aws_instance.cockroachdb[count.index].public_ip
+      NODE_CRT_PWD = var.node_crt_pwd
+    }
+  }
 
   tags = {
     Name = "testInstance"
