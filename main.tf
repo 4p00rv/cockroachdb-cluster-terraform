@@ -59,48 +59,59 @@ resource "aws_instance" "cockroachdb" {
 
   volume_tags = { Name = "test" }
 
+  tags = {
+    Name = "testInstance"
+  }
+}
+
+resource "null_resource" "join-cluster" {
+  count = var.cluster_size
+
   # Create cert and key for the node
   provisioner "local-exec" {
     # provision node cert key
     command = "${path.module}/generate_cert.sh"
     environment = {
-      INTERNAL_IP = self.private_ip
-      EXTERNAL_IP = self.public_ip
+      INTERNAL_IP = aws_instance.cockroachdb[count.index].private_ip
+      EXTERNAL_IP = aws_instance.cockroachdb[count.index].public_ip
       DOMAIN = "test-${count.index}.local"
+      INDEX = count.index
     }
   }
 
   provisioner "file" {
     source = "${path.module}/certs"
-    destination = "certs"
+    destination = "~"
 
     # Use ssh agent to authenticate with remote
     # if this doesn't work make sure the key is added to your agent
     connection {
       user = "ec2-user"
-      host = self.public_ip
-    }
-  }
-
-  provisioner "remote-exec" {
-    inline = [ "sleep 10",
-    "chmod -R 500 certs/",
-    "/usr/local/bin/cockroach start --certs-dir=certs --advertise-addr=${self.private_ip} --join=${join(",",aws_instance.cockroachdb.*.private_ip)} --cache=.25 --max-sql-memory=.25 --background --cert-principal-map=localhost:node" ]
-
-    connection {
-      user = "ec2-user"
-      host = self.public_ip
+      host = aws_instance.cockroachdb[count.index].public_ip
     }
   }
 
   # Remove local node.key file. we don't need it anymore.
   # It also prevents the failures for next resource creation.
   provisioner "local-exec" {
-    command = "chmod 500 certs/node.key && rm certs/node.key certs/node.crt"
+    command = "rm -f certs/node${count.index}.*"
   }
 
-  tags = {
-    Name = "testInstance"
+
+
+  provisioner "remote-exec" {
+    inline = [ "sleep 10",
+    "mv certs/node${count.index}.crt certs/node.crt.imp",
+    "mv certs/node${count.index}.key certs/node.key.imp",
+    "rm -f certs/node*.crt certs/node*.key certs/*.pem",
+    "mv certs/node.key.imp certs/node.key",
+    "mv certs/node.crt.imp certs/node.crt",
+    "chmod -R 500 certs/",
+    "echo /usr/local/bin/cockroach start --certs-dir=certs --advertise-addr=${aws_instance.cockroachdb[count.index].private_ip} --join=${join(",", aws_instance.cockroachdb.*.private_ip)} --cache=.25 --max-sql-memory=.25 --background --cert-principal-map=localhost:node > startup.sh" ]
+
+    connection {
+      user = "ec2-user"
+      host = aws_instance.cockroachdb[count.index].public_ip
+    }
   }
 }
-
