@@ -8,4 +8,4 @@ req_extensions = extensions
 organizationName = Cockroach
 
 [ extensions ]
-subjectAltName = critical,IP:$EXTERNAL_IP,IP:$INTERNAL_IP
+subjectAltName = critical,DNS:localhost,IP:127.0.0.1,IP:$INTERNAL_IP,IP:$EXTERNAL_IP

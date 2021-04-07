@@ -55,19 +55,48 @@ resource "aws_instance" "cockroachdb" {
   key_name = var.ssh_key_name
   subnet_id = module.vpc.subnet_id
   vpc_security_group_ids = [ aws_security_group.default.id ]
-  user_data = templatefile("install.sh", {})
+  user_data = file("${path.module}/install.sh")
 
   volume_tags = { Name = "test" }
 
   # Create cert and key for the node
-  provisioner "provision-cert-key" {
-    working_dir = path.module
-    command = "generate_cert.sh"
+  provisioner "local-exec" {
+    # provision node cert key
+    command = "${path.module}/generate_cert.sh"
     environment = {
-      INTERNAL_IP = aws_instance.cockroachdb[count.index].private_ip
-      EXTERNAL_IP = aws_instance.cockroachdb[count.index].public_ip
-      NODE_CRT_PWD = var.node_crt_pwd
+      INTERNAL_IP = self.private_ip
+      EXTERNAL_IP = self.public_ip
+      DOMAIN = "test-${count.index}.local"
     }
+  }
+
+  provisioner "file" {
+    source = "${path.module}/certs"
+    destination = "certs"
+
+    # Use ssh agent to authenticate with remote
+    # if this doesn't work make sure the key is added to your agent
+    connection {
+      user = "ec2-user"
+      host = self.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [ "sleep 10",
+    "chmod -R 500 certs/",
+    "/usr/local/bin/cockroach start --certs-dir=certs --advertise-addr=${self.private_ip} --join=${join(",",aws_instance.cockroachdb.*.private_ip)} --cache=.25 --max-sql-memory=.25 --background --cert-principal-map=localhost:node" ]
+
+    connection {
+      user = "ec2-user"
+      host = self.public_ip
+    }
+  }
+
+  # Remove local node.key file. we don't need it anymore.
+  # It also prevents the failures for next resource creation.
+  provisioner "local-exec" {
+    command = "chmod 500 certs/node.key && rm certs/node.key certs/node.crt"
   }
 
   tags = {

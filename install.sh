@@ -4,7 +4,7 @@
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 
 # update os
-yum update -y
+# yum update -y
 
 COCKROACH_VERSION="v20.2.7"
 ARTIFACT="cockroach-$COCKROACH_VERSION.linux-amd64"

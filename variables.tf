@@ -23,8 +23,3 @@ variable "cluster_size" {
   type = number
 }
 
-variable "node_crt_pwd" {
-  description = "Password for local key/crt generation"
-  type = string
-}
-
