@@ -53,3 +53,10 @@ Once done `terraform apply` will create the cluster.
 
 Follow the steps for creating a client cert and using it to initialize the cluster:
 https://www.cockroachlabs.com/docs/stable/deploy-cockroachdb-on-aws.html
+
+# Improvements
+
+- Add load balancer for cluster
+- add steps to scale down the cluster(you can only scale up without errors right now)
+- use bastion host for accessing the cluster.
+
