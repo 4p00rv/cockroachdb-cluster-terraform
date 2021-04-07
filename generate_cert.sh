@@ -1,6 +1,7 @@
 #!/bin/bash -xe
 
-sleep 5
+INDEX=${INDEX:-0}
+sleep `expr 5 + 2 \* ${INDEX}`
 
 envsubst < conf/node.conf.tpl > /tmp/node${INDEX}.conf
 
@@ -20,3 +21,4 @@ openssl ca -config conf/ca.conf -keyfile safe-dir/ca.key \
 
 # rm generated pem files
 rm /tmp/node${INDEX}.csr /tmp/node${INDEX}.conf
+rm certs/*.pem
