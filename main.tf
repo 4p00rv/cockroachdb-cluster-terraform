@@ -107,7 +107,7 @@ resource "null_resource" "join-cluster" {
     "mv certs/node.key.imp certs/node.key",
     "mv certs/node.crt.imp certs/node.crt",
     "chmod -R 500 certs/",
-    "echo /usr/local/bin/cockroach start --certs-dir=certs --advertise-addr=${aws_instance.cockroachdb[count.index].private_ip} --join=${join(",", aws_instance.cockroachdb.*.private_ip)} --cache=.25 --max-sql-memory=.25 --background --cert-principal-map=localhost:node > startup.sh" ]
+    "/usr/local/bin/cockroach start --certs-dir=certs --advertise-addr=${aws_instance.cockroachdb[count.index].private_ip} --join=${join(",", aws_instance.cockroachdb.*.private_ip)} --cache=.25 --max-sql-memory=.25 --background --cert-principal-map=localhost:node" ]
 
     connection {
       user = "ec2-user"
